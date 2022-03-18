@@ -23,3 +23,4 @@ const validate = (user) => {
 };
 
 module.exports = router;
+
