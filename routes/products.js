@@ -4,16 +4,17 @@ const router = express.Router();
 const Product = require("../models/product");
 const { User } = require("../models/user");
 const auth = require("../middleware/tokenAuth");
-
-router.post("/", auth, async (req, res) => {
-  let { _id } = req.user;
-  if (!_id) return res.status(404).send("Invalid token.");
-  let { isSeller } = await User.findById(_id);
-  if (isSeller !== "Seller") return res.status(401).send("Access denied, Apply for seller role.");
-  let { body } = req;
-  const newProduct = new Product({ ...body, sellerId: _id });
-  await newProduct.save();
-  res.send(newProduct);
+const upload = require("../middleware/imageUpload");
+router.post("/", upload.array("productPic"), auth, async (req, res) => {
+  console.log(req.files);
+  // let { _id } = req.user;
+  // if (!_id) return res.status(404).send("Invalid token.");
+  // let { isSeller } = await User.findById(_id);
+  // if (isSeller !== "Seller") return res.status(401).send("Access denied, Apply for seller role.");
+  // let { body } = req;
+  // const newProduct = new Product({ ...body, sellerId: _id, productPic: req.file.productPic });
+  // await newProduct.save();
+  // res.send(newProduct);
 });
 
 router.get("/", async (req, res) => {

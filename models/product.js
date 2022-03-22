@@ -14,9 +14,9 @@ const productSchema = new mongoose.Schema({
   },
   price: { type: Number, required: true, maxLength: 10 },
   sellerId: { type: mongoose.Schema.ObjectId, required: true },
+  productPic: {
+    type: mongoose.Schema.ObjectId,
+  },
 });
-
-
-
 
 module.exports = mongoose.model("Product", productSchema);
