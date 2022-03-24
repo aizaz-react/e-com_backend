@@ -1,20 +1,33 @@
 const express = require("express");
 const router = express.Router();
 
-const Product = require("../models/product");
+// const Product = require("../models/product");
+const ProductImage = require("../models/productImage");
 const { User } = require("../models/user");
 const auth = require("../middleware/tokenAuth");
 const upload = require("../middleware/imageUpload");
+const { validate, Product } = require("../models/product");
+
 router.post("/", upload.array("productPic"), auth, async (req, res) => {
-  console.log(req.files);
-  // let { _id } = req.user;
-  // if (!_id) return res.status(404).send("Invalid token.");
-  // let { isSeller } = await User.findById(_id);
-  // if (isSeller !== "Seller") return res.status(401).send("Access denied, Apply for seller role.");
-  // let { body } = req;
-  // const newProduct = new Product({ ...body, sellerId: _id, productPic: req.file.productPic });
-  // await newProduct.save();
-  // res.send(newProduct);
+  let { body, files } = req;
+  let { _id } = req.user;
+  if (!_id) return res.status(404).send("Invalid token.");
+  let { isSeller } = await User.findById(_id);
+  if (isSeller !== "Seller") return res.status(401).send("Access denied, Apply for seller role.");
+  let { error } = validate(req.body);
+  if (error) return res.status(400).send(error.details[0].message);
+  try {
+    const newProduct = new Product({ ...body, sellerId: _id });
+    if (files.length === 0) return res.status(400).send("Please Enter Product Images");
+    files.map(async (file) => {
+      const image = new ProductImage({ name: file.path, productId: newProduct._id });
+      await image.save();
+    });
+    await newProduct.save();
+    res.send(newProduct);
+  } catch (error) {
+    console.log({ error });
+  }
 });
 
 router.get("/", async (req, res) => {
@@ -29,9 +42,18 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   let { id } = req.params;
+
   try {
-    let product = await Product.findById(id);
-    res.send(product);
+    let [product, images] = await Promise.all([Product.findById(id), ProductImage.find({ productId: id })]);
+
+    res.send({
+      _id: product._id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      sellerId: product.sellerId,
+      images,
+    });
   } catch (error) {
     res.status(404).send("No product found related to this " + id);
   }
